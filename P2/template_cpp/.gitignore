@@ -1,0 +1,15 @@
+Absyn.*
+CPP.l
+CPP.y
+lex.yy.c
+y.tab.c
+Parser.H
+ParserError.H
+lex.cpp_.c
+Buffer.*
+Bison.H
+Printer.*
+Skeleton.*
+compiler
+CPP.cf
+Test.C

@@ -1,0 +1,62 @@
+PDefs.   Program ::= [Def] ;
+
+DVar.    Def    ::= Type Ident ;
+DFun.    Def    ::= Type Ident "{" [Stm] "}" ;
+DStruct. Def    ::= "struct" Ident "{" [Field] "}" ;
+
+terminator Def "" ;
+
+FDecl.   Field  ::= Type Ident ;
+
+terminator nonempty Field ";" ;
+
+SExp.    Stm    ::= Exp ";" ;
+SReturn. Stm    ::= "return" Exp ";" ;
+SReturnV. Stm    ::= "return" ";" ;
+SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
+SDoWhile. Stm    ::= "do" Stm "while" "(" Exp ")" ";" ;
+SFor.    Stm    ::= "for" "(" Exp ";" Exp ";" Exp ")" Stm ;
+SBlock.  Stm    ::= "{" [Stm] "}" ;
+SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
+
+terminator Stm "" ;
+
+ETrue.   Exp15  ::= "true" ;
+EFalse.  Exp15  ::= "false" ;
+EInt.    Exp15  ::= Integer ;
+EIdent.  Exp15  ::= Ident ; 
+
+EApp.    Exp14  ::= Ident "(" ")" ;
+
+EProj.   Exp14  ::= Exp14 "." Ident ;
+
+EPIncr.  Exp14  ::= Exp14 "++" ;
+EPDecr.  Exp14  ::= Exp14 "--" ;
+
+EIncr.   Exp13  ::= "++" Exp13 ;
+EDecr.   Exp13  ::= "--" Exp13 ;
+EUPlus.  Exp13  ::= "+" Exp13 ;
+EUMinus. Exp13  ::= "-" Exp13 ;
+
+ETimes.  Exp12  ::= Exp12 "*"   Exp13 ;
+EDiv.    Exp12  ::= Exp12 "/"   Exp13 ;
+EPlus.   Exp11  ::= Exp11 "+"   Exp12 ;
+EMinus.  Exp11  ::= Exp11 "-"   Exp12 ;
+ETwc.    Exp10  ::= Exp10 "<=>" Exp11 ;
+ELt.     Exp9   ::= Exp9  "<"   Exp10 ;
+EGt.     Exp9   ::= Exp9  ">"   Exp10 ;
+ELtEq.   Exp9   ::= Exp9  "<="  Exp10 ;
+EGtEq.   Exp9   ::= Exp9  ">="  Exp10 ;
+EEq.     Exp8   ::= Exp8  "=="  Exp9 ;
+ENEq.    Exp8   ::= Exp8  "!="  Exp9 ;
+EAnd.    Exp4   ::= Exp4  "&&"  Exp5 ;
+EOr.     Exp3   ::= Exp3  "||"  Exp4 ;
+EAss.    Exp2   ::= Exp3 "=" Exp2 ;
+ECond.   Exp2   ::= Exp3 "?" Exp ":" Exp2 ;
+
+coercions Exp 15 ;
+
+rules Type   ::= "bool" | "int" | "void" | Ident ;
+
+comment "//" ;
+comment "/*" "*/" ;

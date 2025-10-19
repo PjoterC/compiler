@@ -1,0 +1,37 @@
+struct FibState {
+  int iter;
+  int accu;
+  int prev;
+  int save;
+}
+
+FibState state
+
+void resetState {
+  state.iter = 0;
+  state.accu = 1;
+  state.prev = 0;
+}
+
+int n
+
+int fib {
+  if (n == 0) {
+    return 0;
+  } else {
+    resetState();
+
+    for (state.iter = 0; state.iter < n - 1; ++state.iter) {
+      state.save = state.accu;
+      state.accu = state.accu + state.prev;
+      state.prev = state.save;
+    }
+
+    return state.accu;
+  }
+}
+
+int main {
+  n = 7;
+  return fib();
+}

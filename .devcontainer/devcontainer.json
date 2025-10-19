@@ -1,0 +1,25 @@
+{
+  "name": "CC Toolchain",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerUser": "compilerdev",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        }
+      },
+      "extensions": [
+        "ms-vscode.makefile-tools",
+        "ms-vscode.cpptools-extension-pack",
+        "haskell.haskell",
+        "agurodriguez.vscode-lbnf"
+      ]
+    }
+  }
+}

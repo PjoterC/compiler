@@ -1,0 +1,477 @@
+% !TEX TS-program = pdflatex
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\title{Name Resolution with \texttt{typedef} and \texttt{using}}
+\author{}
+\date{}
+
+% Listing style
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  stringstyle=\color{red},
+  commentstyle=\color{gray},
+  breaklines=true,
+  showspaces=false,
+  showstringspaces=false,
+  frame=single
+}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Table of Contents}
+  \tableofcontents
+\end{frame}
+
+% ---
+\section{Introduction}
+\begin{frame}{Introduction}
+\begin{itemize}
+\item \textbf{Type aliases} are synonyms for existing types. They improve readability by giving meaningful names to types (especially complex ones).
+\item Aliases can be declared in \textbf{global, block, class, or namespace} scope. This means you can have aliases inside functions, inside classes as member typedefs, or at namespace/global scope.
+\item In modern C++, \texttt{using} (since C++11) is preferred. It can be used exactly like \texttt{typedef} for simple aliases and also to create \textsl{alias templates} for generic types.
+\end{itemize}
+\end{frame}
+% ---
+\section{Name Resolution Rules}
+\begin{frame}{Name Resolution Rules}
+\begin{itemize}
+\item \textbf{Uniform lookup rules:} The compiler treats alias names just like any other name. In other words, aliases obey the same C++ scope and hiding rules as class or namespace names.
+\item \textbf{Scope and hiding:} An alias’s visibility depends on where it’s declared. A local declaration can hide an alias from an outer scope. For example, if a typedef \texttt{X} exists globally, a local variable \texttt{X} inside a function will shadow that alias. To refer to an alias from an outer scope, you must qualify it (e.g. \texttt{Outer::AliasName}).
+\item \textbf{Dependent names in templates:} When using a type alias inside a template (as a dependent name), you still use \texttt{typename} as needed, just as with any nested type.
+\item \textbf{Argument-dependent lookup (ADL):} When calling functions, C++ considers the \textsl{underlying types} of arguments, not alias names. \textbf{Typedefs/\texttt{using} aliases do not contribute to ADL. }
+\end{itemize}
+\end{frame}
+% ---
+\section{How to Use \texttt{typedef} and \texttt{using} (Differences)}
+\begin{frame}{typedef vs. using}
+\begin{itemize}
+\item \textbf{Equivalence (for simple aliases):} For basic aliases, \texttt{typedef} and \texttt{using} are equivalent. Example: \texttt{typedef int T1;} and \texttt{using T2 = int;} both make a synonym for \texttt{int}. The choice is syntactic.
+\item \textbf{Readability:} \texttt{using} syntax is often clearer to read (aliases appear left-to-right). With \texttt{typedef}, the alias name is at the end of the declaration, which can be confusing for complex types.
+\item \textbf{Templates:} The key advantage of \texttt{using} is alias templates. You \textsl{cannot} create a templated alias with \texttt{typedef}; \texttt{using} can declare alias templates (e.g. \texttt{template<class T> using Vec = std::vector<T>;}).
+\end{itemize}
+\end{frame}
+% ---
+\section{Examples}
+% Example 1
+\subsection{Example 1}
+\begin{frame}[fragile]{Example 1: \texttt{typedef} alias for a simple type}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+// Example 1: typedef alias for a simple type
+typedef int myint;
+
+int main() {
+    myint x = 5;
+    std::cout << "myint x = " << x << "\n";
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt{typedef int myint;} creates a new name \texttt{myint} that’s exactly equivalent to \texttt{int}. In \texttt{main()}, \texttt{myint x = 5;} declares an integer variable. This always compiles because \texttt{typedef} does not introduce a new type, just an alias.
+\end{frame}
+% ---
+% Example 2
+\subsection{Example 2}
+\begin{frame}[fragile]{Example 2: \texttt{using} alias for a template}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <vector>
+
+// Example 2: using alias for a template
+using myvec = std::vector<int>;
+
+int main() {
+    myvec v = {1, 2, 3};
+    std::cout << "myvec size = " << v.size() << "\n";
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt{using myvec = std::vector<int>;} defines an alias \texttt{myvec} for \texttt{std::vector<int>}. It’s more readable than a \texttt{typedef} with templates. The code compiles and prints the vector’s size because \texttt{myvec} behaves exactly like the instantiated template.
+\end{frame}
+% ---
+% Example 3
+\subsection{Example 3}
+\begin{frame}[fragile]{Example 3: Name conflict with a \texttt{using}-declaration}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+namespace A { int x; }
+using A::x; // brings A::x into the global scope
+
+int main() {
+    int x = 1;
+    std::cout << x;
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt{using A::x;} imports \texttt{A::x} into the global namespace. Declaring your own \texttt{x} causes ambiguity between \texttt{A::x} and your local \texttt{x}, leading to a compile-time error.
+\end{frame}
+% ---
+% Example 4
+\subsection{Example 4}
+\begin{frame}[fragile]{Example 4: Ambiguity with \texttt{using namespace}}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+namespace B { void f(); }
+using namespace B;
+
+void f(int) { std::cout << "f(int)\n"; }
+
+int main() {
+    f(); // error: ambiguous between B::f and ::f(int)
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt{using namespace B;} brings all of \texttt{B} into the global scope. Since \texttt{B} has \texttt{void f()} and you define \texttt{void f(int)}, the call \texttt{f()} is ambiguous.
+\end{frame}
+% ---
+% Example 5
+\subsection{Example 5}
+\begin{frame}[fragile]{Example 5: Template alias via \texttt{typedef} (fails)}
+\begin{lstlisting}[language=C++]
+template<typename T>
+typedef T* PtrTypedef; // Error
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt We try to use template alias with typedef. Typedef cannot be used with templates.
+\end{frame}
+
+% Example 6
+\subsection{Example 6}
+\begin{frame}[fragile]{Example 6: Template alias via \texttt{using} (works)}
+\begin{lstlisting}[language=C++]
+template<typename T>
+using PtrUsing = T*;
+
+int main() {
+    PtrUsing<int> p = new int(123); // OK
+    delete p;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt However, it is possible with using.
+\end{frame}
+% ---
+% Example 7
+\subsection{Example 7}
+\begin{frame}[fragile]{Example 7: Qualified name lookup}
+\begin{lstlisting}[language=C++]
+// Define a function inside namespace M
+namespace M {
+    void g() { std::cout << "M::g called\n"; }
+}
+
+int main() {
+    M::g();    // call the function with its full qualification
+    return 0;
+}
+\end{lstlisting}
+
+\textbf{Explanation:}
+Using the qualified name `M::g()` tells the compiler exactly which `g` to invoke—namely the one defined in namespace `M`.
+\end{frame}
+% ---
+% Example 8
+\subsection{Example 8}
+\begin{frame}[fragile]{Example 8: \texttt{typedef} vs \texttt{using} for a complex type}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <map>
+#include <vector>
+#include <string>
+
+// Example 8: typedef vs using for a complex type
+typedef std::map<std::string, std::vector<int>> MapVec;
+using M2 = std::map<std::string, std::vector<int>>;
+
+int main() {
+    MapVec mv;
+    M2 m2;
+    std::cout << "Complex aliases created." << "\n";
+    return 0;
+}
+\end{lstlisting}
+\end{frame}
+% ---
+% Example 8-2
+\subsection{Example 8}
+\begin{frame}[fragile]{Example 8: \texttt{typedef} vs \texttt{using} for a complex type}
+\textbf{Explanation:}
+Both \texttt{MapVec} and \texttt{M2} alias the same complex type. \texttt{using} syntax is generally clearer as type complexity grows.
+\end{frame}
+% ---
+% Example 9
+\subsection{Example 9}
+\begin{frame}[fragile]{Example 9: \texttt{using}-declaration for a type}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+namespace C { typedef double real; }
+using C::real;
+
+void use_real(real r) { std::cout << "real: " << r << "\n"; }
+
+int main() {
+    use_real(3.14);
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+\texttt{using C::real;} imports \texttt{C::real} into the global scope as \texttt{double}.
+\end{frame}
+% ---
+% Example 10
+\subsection{Example 10}
+\begin{frame}[fragile]{Example 10: Implicit conflicts with \texttt{using namespace}}
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+namespace D {
+    struct Foo {};
+    void Foo() { }
+}
+using namespace D;
+
+int main() {
+    Foo foo_obj; // ambiguous: type vs. function (“most vexing parse”)
+    return 0;
+}
+\end{lstlisting}
+\textbf{Explanation:}
+Importing both a type and a function named \texttt{Foo} causes parsing ambiguity and potential “most vexing parse” issues.
+\end{frame}
+% ---
+\subsection{Grammar update}
+\begin{frame}[fragile]{Grammar update}
+\begin{lstlisting}[language=Haskell]
+DTypedef.   Def ::= "typedef" Type Id ";" ;          -- typedef int MyInt;
+DUsing.     Def ::= "using" Id "=" Type ";" ;        -- using MyInt = int;
+DUsingNs.   Def ::= "using" "namespace" QualId ";" ; -- using namespace std;
+DUsingSymbol. Def ::= "using" Id ; -- using std::cout;
+DNamespace. Def ::= "namespace" Id "{" [Def] "}" ;   -- namespace foo { ... }
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Visit functions}
+\begin{frame}[fragile]{Visit functions}
+\begin{lstlisting}[language=C++]
+void visitSimpleId(SimpleId *p);
+void visitQualIdNs(QualIdNs *p);
+void visitDTypedef(DTypedef *p); // use AddAlias or AddLocalAlias to add the alias to the appropriate scope
+void visitDUsing(DUsing *p); // use AddAlias or AddLocalAlias to add the alias to the appropriate scope
+void visitDUsingNs(DUsingNs *p);
+void visitDUsingSymbol(DUsingSymbol *p); // Handle using declarations for symbols
+void visitDNamespace(DNamespace *p); //add namespace to globals
+void visitTypeQualId(TypeQualId *p); // Checks if it's a struct/class or if it's in aliases
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Helper structures}
+\begin{frame}[fragile]{Helper structures}
+\begin{lstlisting}[language=C++]
+struct AliasType {
+    const Type* aliasedType;
+    Id name;
+};
+using AliasTable = SymbolTable<AliasType>;
+
+struct Globals {
+    FnTable fns;
+    StTable sts;
+    AliasTable aliases; // Store aliases for both typedefs and using
+    std::map<Id, NamespaceInfo> namespaces;
+    std::vector<NamespaceInfo> usedNamespaces; // Namespaces included with using
+};
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Helper structures}
+\begin{frame}[fragile]{Helper structures}
+\begin{lstlisting}[language=C++]
+struct Context {
+    Globals globals;
+    std::vector<Scope> vars;
+    AliasTable localAliases; // Local aliases for the current scope
+    std::vector<NamespaceInfo> localNamespaces; // Local namespaces for the current scope
+};
+\end{lstlisting}
+\end{frame}
+% ---
+\section{visitTypeQualId}
+\begin{frame}[fragile]{visitTypeQualId}
+\begin{lstlisting}[language=C++]
+void visitTypeQualId(TypeId *p)
+{
+    //Existing logic for visiting TypeQualId
+    auto alias = findAlias(p->id);
+    if(alias) {
+        lastType = alias->aliasedType;
+    }
+}
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Aliases}
+\begin{frame}[fragile]{Aliases}
+\begin{lstlisting}[language=C++]
+void AddAlias(const Id& id, const Type* type, AliasTable& aliasTable) { // called whenever typedef or using is used
+    if (aliasTable.find(id) != aliasTable.end()) {
+        std::cerr << "TYPE ERROR: Alias '" << id << "' already exists." << std::endl;
+        exit(1);
+    }
+    if (context.globals.aliases.find(id) != context.globals.aliases.end()) {
+        std::cerr << "TYPE ERROR: Alias '" << id << "' already exists." << std::endl;
+        exit(1);
+    }
+    aliasTable[id] = AliasType{type, id};
+}
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Aliases}
+\begin{frame}[fragile]{Aliases}
+\begin{lstlisting}[language=C++]
+const AliasType* findAlias(const QualifiedId& qualId) {
+    // Check local aliases first (simple names only)
+    if (qualId.find("::") == std::string::npos) {  // Simple name
+        auto it = context.localAliases.find(qualId);
+        if (it != context.localAliases.end()) {
+            return &it->second;
+        }
+    }
+    // Check global aliases
+    auto it = context.globals.aliases.find(qualId);
+    if (it != context.globals.aliases.end()) {
+        return &it->second;
+    }
+    return nullptr; // Not found
+}
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Namespaces}
+\begin{frame}[fragile]{Namespaces}
+\begin{lstlisting}[language=C++]
+namespace std {
+    // ... many declarations
+}
+using std::string; // Using declaration for a specific type
+
+struct NamespaceInfo {
+    std::string name; // Name of the namespace
+    FnTable functions;
+    StTable structs;
+    VaTable variables;
+    AliasTable aliases;
+    std::vector<NamespaceInfo> nestedNamespaces; // Nested namespaces within this namespace
+};
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Using namespaces}
+\begin{frame}[fragile]{Using namespaces}
+\begin{lstlisting}[language=C++]
+struct Globals {
+    FnTable fns;
+    StTable sts;
+    AliasTable aliases; // Store aliases for both typedefs and using
+    std::map<Id, NamespaceInfo> namespaces;
+    std::vector<NamespaceInfo> usedNamespaces; // Local namespaces for the current scope
+};
+
+struct Context {
+    Globals globals;
+    std::vector<Scope> vars;
+    AliasTable localAliases; // Local aliases for the current scope
+    std::vector<NamespaceInfo> localNamespaces; // Local namespaces for the current scope
+};
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Using namespaces}
+\begin{frame}[fragile,shrink=4]{Using namespaces}
+\begin{lstlisting}[language=C++]
+void AddUsingNameSpaceLocal(const Id& id) {
+    //Find namespace in the globals and add it to the current context or if symbols from that namespace were included, update the values
+}
+
+void AddUsingNameSpaceGlobal(const Id& id) {
+    //Find namespace in the globals and add it to the global context or if symbols from that namespace were included, update the values
+}
+void AddSymbol(const qualId&, const std::vector<NamespaceInfo>& namespaces) {
+    //Check if symbol exists in specific namespace, inside local or global used namespace list, create a dummy namespace with nested dummy namespaces but without any values and add the symbol to that namespace
+}
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Using namespaces}
+\begin{frame}[fragile,shrink=15]{Using namespaces}
+  \lstset{basicstyle=\ttfamily\scriptsize}
+  \begin{lstlisting}[language=C++]
+Type* findTypeInNamespace(const Id& id, const std::vector<NamespaceInfo>& namespaces) {
+    for (const auto& ns : namespaces) {
+        auto fnIt = ns.functions.find(id);
+        if (fnIt != ns.functions.end()) {
+            return fnIt->second.ret; // Return the function's return type
+        }
+        auto stIt = ns.structs.find(id);
+        if (stIt != ns.structs.end()) {
+            return stIt->second; // Return the struct's type
+        }
+        auto vaIt = ns.variables.find(id);
+        if (vaIt != ns.variables.end()) {
+            return vaIt->second; // Return the variable's type
+        }
+        auto aliasIt = ns.aliases.find(id);
+        if (aliasIt != ns.aliases.end()) {
+            return aliasIt->second.aliasedType; // Return the aliased type
+        }
+        for (const auto& nestedNs : ns.nestedNamespaces) {
+            // Recursively search in nested namespaces
+            auto type = findTypeInNamespace(id, {nestedNs});
+            if (type) {
+                return type; // Found in nested namespace
+            }
+        }
+    }
+    return nullptr;
+}
+\end{lstlisting}
+\end{frame}
+% ---
+\section{Summary}
+\begin{frame}{Summary}
+\begin{itemize}
+  \item Both 'using' and 'typedef' create aliases, which are stored as their name and actual type
+  \item Namespaces can be used fully, or as dummies with only neccessary symbols
+  \item After exiting scope, local aliases and namespaces are cleared
+  \item Visitor functions for qualified identifiers can check a specific namespace defined in globals directly
+  \item Helper functions like findTypeNamespace() can be used to search for non-qualified identifiers in used namespaces
+\end{itemize}
+
+\end{frame}
+% ---
+\section{Our Experiences}
+\begin{frame}{Our Experiences}
+\begin{center}
+    \includegraphics[width=1.0\textwidth]{emoji.jpg}
+  \end{center}
+  \vspace{1ex}
+  \centering
+\end{frame}
+
+\end{document}

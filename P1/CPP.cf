@@ -1,0 +1,234 @@
+-- Comments
+comment "//" ;
+comment "/*" "*/" ;
+comment "#" ;
+entrypoints Program ;
+
+-- Entry Points
+TopFun. Top ::= Def ;
+TopDecl. Top ::= Decl ;
+TopUsingQualified. Top ::= "using" QId ";" ;
+TopTypedef. Top ::= "typedef" SpecifiedType Id ";" ;
+StructDef. Top ::= "struct" Id "{" [Decl] "}" ";" ;
+StructInheritance. Top ::= "struct" Id ":" [Id] "{" [Decl] "}" ";" ;
+TemplateDef. Top ::= "template" "<typename" Id ">" Def ;
+
+separator Top "" ;
+
+--OptionalConstBase. ::= "" ;
+--OptionalConst. ::= "const" ;
+
+-- Program
+PDefs. Program ::= [Top] ;
+
+-- Function Definitions
+FunDef. Def ::= SpecifiedType QId "(" [Arg] ")" "{" [Stm] "}" ;
+FunDefNoArg. Def ::= SpecifiedType QId "(" ")" "{" [Stm] "}" ;
+InlineDef. Def ::= "inline" SpecifiedType QId "(" [Arg] ")" "{" [Stm] "}" ;
+InlineDefNoArg. Def ::= "inline" SpecifiedType QId "(" ")" "{" [Stm] "}" ;
+
+
+
+-- Function Declarations
+FunDecl. Decl ::= SpecifiedType QId "(" [Arg] ")" ";" ;
+FunDeclNoArg. Decl ::= SpecifiedType QId "(" ")" ";" ;
+InlineDecl. Decl ::= "inline" SpecifiedType QId "(" [Arg] ")" ";" ;
+InlineDeclNoArg. Decl ::= "inline" SpecifiedType QId "(" ")" ";" ;
+
+
+-- Arguments
+ArgumentNoType. Arg ::= SpecifiedType ;
+Argument. Arg ::= SpecifiedType Id ;
+ArgumentAssignment. Arg ::= SpecifiedType Id "=" Exp ;
+separator nonempty Arg "," ;
+
+
+
+
+-- Variable Declarations
+VarDeclDef. Decl ::= SpecifiedType [InitVar] ";" ;
+VarDeclDefConstInit. Decl ::= "constinit" SpecifiedType [InitVar] ";" ;
+VarDeclDefConst. Decl ::= "const" "constinit" Type [InitVar] ";" ;
+
+
+InitVariable. InitVar ::= Id ;
+InitVarWithVal. InitVar ::= Id "=" Exp ;
+separator nonempty InitVar "," ;
+
+
+
+
+terminator Def "" ;
+terminator Decl "" ;
+
+
+
+
+
+
+
+
+-- Statements
+SExp. Stm ::= Exp ";" ;
+
+SStructDef. Stm ::= "struct" Id "{" [Decl] "}" ";" ;
+SStructInheritance. Stm ::= "struct" Id ":" [Id] "{" [Decl] "}" ";" ;
+
+
+SDecl. Stm ::= SpecifiedType [InitVar] ";" ;
+SDeclConstInit. Stm ::= "constinit" SpecifiedType [InitVar] ";" ;
+SDeclConstConst. Stm ::= "const" "constinit" Type [InitVar] ";" ;
+
+SReturn. Stm ::= "return" Exp ";" ;
+SReturnVoid. Stm ::= "return" ";" ;
+
+SBlock. Stm ::= "{" [Stm] "}" ;
+SIfElse. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+SIfNoElse. Stm ::= "if" "(" Exp ")" Stm ;
+
+
+
+
+
+STypedef. Stm ::= "typedef" SpecifiedType Id ";" ;
+STryCatch. Stm ::= "try" Stm "catch" "(" Arg ")" Stm ;
+
+
+
+SWhile. Stm ::= "while" "(" Exp ")" Stm ;
+SDoWhile. Stm ::= "do" Stm "while" "(" Exp ")" ";" ;
+
+
+
+SFor. Stm ::= "for" "(" ForInit  ";" Exp ";" Exp ")" Stm ;
+
+SForInitializer. ForInit ::= SpecifiedType Id "=" Exp;
+SForInitializerBase. ForInit ::= SpecifiedType Id ;
+
+terminator Stm "" ;
+
+
+
+
+-- String concatenation
+StringsOne.  Strings ::= String ;
+StringsMany. Strings ::= Strings String ;
+
+-- Expression precedence 
+
+--Literals
+EInt. Exp15 ::= Integer ;
+EDouble. Exp15 ::= Double ;
+EChar. Exp15 ::= Char ;
+EString. Exp15 ::= Strings ;
+ETrue. Exp15 ::= "true" ;
+EFalse. Exp15 ::= "false" ;
+
+--Qualified identifiers
+EId. Exp15 ::= QId ;
+
+--Indexing
+EArrayAccess. Exp14 ::= Exp14 "[" Exp "]" ;
+
+--FunctionCall
+ECall. Exp14 ::= Exp14 "(" [Exp] ")" ;
+
+--Structure projection
+EMember. Exp14 ::= Exp14 "." Exp15 ;
+EPointerAccess. Exp14 ::= Exp14 "->" Exp15 ;
+
+--increment/decrement post
+EPIncr. Exp14 ::= Exp14 "++" ;
+EPDecr. Exp14 ::= Exp14 "--" ;
+
+--increment/decrement pre, dereference negation
+EDeref. Exp13 ::= "*" Exp13 ;
+EIncr. Exp13 ::= "++" Exp13 ;
+EDecr. Exp13 ::= "--" Exp13 ;
+ENot. Exp13 ::= "!" Exp13 ;
+
+
+--unary plus and minus
+ENeg. Exp13 ::= "-" Exp13 ;
+EPos. Exp13 ::= "+" Exp13 ;
+
+--Multiplication, division, remainder
+ETimes. Exp12 ::= Exp12 "*" Exp13 ;
+EDiv. Exp12 ::= Exp12 "/" Exp13 ;
+EMod. Exp12 ::= Exp12 "%" Exp13 ;
+
+
+
+--Addition and subtraction
+EPlus. Exp11 ::= Exp11 "+" Exp12 ;
+EMinus. Exp11 ::= Exp11 "-" Exp12 ;
+
+--Shift/stream
+ShiftLeft. Exp10 ::= Exp10 "<<" Exp11 ;
+ShiftRight. Exp10 ::= Exp10 ">>" Exp11 ;
+
+--Three-way comparison
+ETWC. Exp9 ::= Exp9 "<=>" Exp10 ;
+
+--Comparison
+ELt. Exp9 ::= Exp9 "<" Exp10 ;
+EGt. Exp9 ::= Exp9 ">" Exp10 ;
+ELtEq. Exp9 ::= Exp9 "<=" Exp10 ;
+EGtEq. Exp9 ::= Exp9 ">=" Exp10 ;
+
+--(in)equality
+EEq. Exp8 ::= Exp8 "==" Exp9 ;
+ENEq. Exp8 ::= Exp8 "!=" Exp9 ;
+
+--conjunction and disjunction
+EAnd. Exp4 ::= Exp4 "&&" Exp5 ;
+EOr. Exp3 ::= Exp3 "||" Exp4 ;
+
+--assignment
+EAss. Exp2 ::= Exp3 "=" Exp2 ;
+EPlusEQ. Exp2 ::= Exp3 "+=" Exp2 ;
+EMinusEQ. Exp2 ::= Exp3 "-=" Exp2 ;
+
+--conditional
+EConditional. Exp2 ::= Exp3 "?" Exp2 ":" Exp2 ;
+
+--throw
+EThrow. Exp1 ::= "throw" Exp1 ;
+
+
+
+coercions Exp 15 ;
+separator Exp "," ;
+
+
+
+
+-- Types
+TBool. Type ::= "bool" ;
+TInt. Type ::= "int" ;
+TDouble. Type ::= "double" ;
+TVoid. Type ::= "void" ;
+TChar. Type ::= "char" ;
+TCustom. Type ::= QId ;
+TRef. Type ::= Type "&" ;
+
+
+
+--Specifiers
+TBase. SpecifiedType ::= Type ;
+TConst. SpecifiedType ::= "const" Type ;
+
+
+
+separator nonempty Type "," ;
+
+
+
+
+-- (Qualified) Identifiers
+SimpleId. QId ::= Id ;
+TemplateId. QId ::= QId "<" [Type] ">" ;
+QualifiedId. QId ::= QId "::" Id ;
+
+separator nonempty Id "," ;
+token Id (letter (letter | digit | '_')*) ;

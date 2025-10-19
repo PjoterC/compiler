@@ -1,0 +1,13 @@
+
+token Identifier (upper|lower)
+
+Arg . Arg ::= Type Identifier;
+
+
+
+
+rules Scalartype ::= "int" | "real" | "complex";
+
+token Tensorn = {"tensor"}digit+;
+
+TTensor . Type ::= ( "vector" | "matrix" | Tensorn ) Scalartype;
